@@ -262,13 +262,55 @@
             font-size: 12px;
             color: #666;
         }
+        /* تصميم بنر الذكر والصلاة على النبي */
+.dhikr-banner {
+    width: 100%;
+    margin: 25px 0 15px 0;
+    padding: 14px 20px;
+    background: linear-gradient(135deg, rgba(102, 252, 241, 0.08), rgba(37, 211, 102, 0.08));
+    border: 1px solid rgba(102, 252, 241, 0.25);
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    animation: bannerGlow 4s ease-in-out infinite alternate;
+}
+
+.dhikr-text {
+    color: #66fcf1;
+    font-size: 15px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    text-shadow: 0 0 10px rgba(102, 252, 241, 0.3);
+}
+
+.dhikr-icon {
+    font-size: 16px;
+}
+
+/* تأثير نبض خفيف وبسيط للإضاءة */
+@keyframes bannerGlow {
+    0% {
+        border-color: rgba(102, 252, 241, 0.2);
+        box-shadow: 0 4px 15px rgba(102, 252, 241, 0.1);
+    }
+    100% {
+        border-color: rgba(37, 211, 102, 0.4);
+        box-shadow: 0 4px 25px rgba(37, 211, 102, 0.2);
+    }
+}
+        
     </style>
 </head>
 <body>
 
     <div class="container">
         <div class="header">
-            <h1>⚔️ <span>🇾🇪🇸🇦🇪🇬</span> منصه تحميل نن من تيك توك بدون حقوق</h1>
+            <h1>بسم الله الرحمن الرحيم <span>🇾🇪🇸🇦🇪🇬</span> منصه تحميل  من تيك توك بدون حقوق</h1>
             <p>تحميل مقاطع TikTok و  بأعلى جودة وبدون علامة مائية</p>
         </div>
 
@@ -309,7 +351,13 @@
             </footer>
         </div>
     </div>
-
+<!-- بنر الذكر والصلاة على النبي -->
+<div class="dhikr-banner">
+    <span class="dhikr-icon">✨</span>
+    <p class="dhikr-text">اذكر الله وصلِّ على النبي ﷺ</p>
+    <span class="dhikr-icon">✨</span>
+</div>
+    
     <script>
         async function processDownload() {
             const urlInput = document.getElementById('videoUrl').value.trim();
