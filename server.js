@@ -1,106 +1,39 @@
 const express = require('express');
-const axios = require('axios');
 const cors = require('cors');
-const path = require('path');
+const axios = require('axios');
+const { exec } = require('child_process');
+const { promisify } = require('util');
+const { join } = require('path');
+const { existsSync, chmodSync } = require('fs');
+const os = require('os');
 
+const execAsync = promisify(exec);
 const app = express();
+const PORT = process.env.PORT || 3000;
+
 app.use(cors());
 app.use(express.json());
+app.use(express.static('public'));
 
-app.use(express.static(path.join(__dirname, 'public')));
+let ytDlpPath = null;
 
-app.post('/api/download', async (req, res) => {
-    const { url } = req.body;
+function getPlatform() {
+    const arch = os.arch();
+    const platform = os.platform();
+    const archMap = {
+        'x64': 'amd64', 'x86_64': 'amd64', 'amd64': 'amd64',
+        'arm64': 'arm64', 'aarch64': 'arm64',
+        'armv7l': 'armv7l', 'armv6l': 'armv6l',
+        'i386': 'i386', 'i686': 'i386', 'x86': 'i386'
+    };
+    return {
+        arch: archMap[arch] || 'amd64',
+        platform: platform === 'win32' ? 'windows' : platform === 'darwin' ? 'macos' : 'linux'
+    };
+}
 
-    if (!url) {
-        return res.status(400).json({ success: false, error: 'يرجى إدخال رابط الفيديو' });
-    }
-
-    try {
-        // 1. إذا كان الرابط لتيك توك (شغال 100%)
-        if (url.includes('tiktok.com')) {
-            const apiRes = await axios.post('https://www.tikwm.com/api/', new URLSearchParams({
-                url: url,
-                hd: 1
-            }));
-
-            if (apiRes.data && apiRes.data.code === 0) {
-                const data = apiRes.data.data;
-                return res.json({
-                    success: true,
-                    data: {
-                        title: data.title || 'فيديو TikTok',
-                        cover: data.cover,
-                        author: data.author.unique_id || 'TikTok User',
-                        video: data.play || data.wmplay,
-                        audio: data.music
-                    }
-                });
-            } else {
-                throw new Error('تعذر جلب فيديو تيك توك، تأكد من الرابط.');
-            }
-        } 
-        // 2. إذا كان الرابط لإنستغرام (Reels / Posts)
-        else if (url.includes('instagram.com')) {
-            const apiRes = await axios.get(`https://api.vkrdown.com/insta/?url=${encodeURIComponent(url)}`).catch(() => null);
-
-            if (apiRes && apiRes.data && apiRes.data.data) {
-                const instaData = apiRes.data.data;
-                const mediaUrl = Array.isArray(instaData) ? instaData[0].url : (instaData.url || instaData.video_url);
-
-                if (mediaUrl) {
-                    return res.json({
-                        success: true,
-                        data: {
-                            title: 'فيديو إنستغرام',
-                            cover: instaData.thumbnail || '',
-                            author: 'Instagram User',
-                            video: mediaUrl,
-                            audio: null
-                        }
-                    });
-                }
-            }
-            
-            // محاولة احتياطية ثانية للإنستغرام في حال تعثرت الأولى
-            const backupRes = await axios.get(`https://v3.fastdl.app/api/convert`, {
-                params: { url: url }
-            }).catch(() => null);
-
-            if (backupRes && backupRes.data && backupRes.data.url) {
-                return res.json({
-                    success: true,
-                    data: {
-                        title: 'فيديو إنستغرام',
-                        cover: '',
-                        author: 'Instagram User',
-                        video: backupRes.data.url[0].url || backupRes.data.url,
-                        audio: null
-                    }
-                });
-            }
-
-            throw new Error('فشل استخراج فيديو إنستغرام، تأكد أن الحساب عام (Public).');
-        } else {
-            throw new Error('الرابط يدعم حالياً التيك توك والإنستغرام فقط.');
-        }
-
-    } catch (error) {
-        return res.status(500).json({
-            success: false,
-            error: error.message || 'حدث خطأ أثناء جلب الفيديو'
-        });
-    }
-});
-
-app.get('*', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'index.html'));
-});
-
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`);
-});
+async function getOrInstallYTDLP() {
+    if (ytDlpPath && existsSync(ytDlpPath)) return ytDlpPath;
     const { arch, platform } = getPlatform();
     const binName = platform === 'windows' ? 'yt-dlp.exe' : 'yt-dlp';
     const outputPath = join(process.cwd(), binName);
