@@ -1,7 +1,7 @@
 {
   "name": "2b-video-downloader",
   "version": "1.0.0",
-  "description": "2B YoRHa Unit Social Media Video Downloader Web App",
+  "description": "2B YoRHa Unit Video Downloader",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"
